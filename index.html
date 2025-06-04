@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multilayer Resistance Calculator</title>
+
+  <!-- MathJax (for rendering formulas) -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Simple CSS styles -->
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: #333;
+    }
+    .top-image {
+      display: block;
+      margin: 0 auto 1.5rem auto;
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+      color: #555;
+    }
+    .inline-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.25rem;
+    }
+    input[type="number"],
+    select {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    input[type="number"] {
+      flex: 1;
+    }
+    select.unit-select {
+      width: 120px;
+    }
+    button {
+      display: inline-block;
+      padding: 0.6rem 1.2rem;
+      margin-top: 1.5rem;
+      background-color: #1abc9c;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #17a589;
+    }
+    .layer {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #fdfdfd;
+    }
+    .layer h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .connection-type,
+    .output-unit-section {
+      margin-top: 1.5rem;
+    }
+    .result {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: #e8f8f5;
+      border: 1px solid #a2d9ce;
+      border-radius: 6px;
+      color: #155d4e;
+      font-size: 1rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .error {
+      margin-top: 1rem;
+      color: #e74c3c;
+      font-weight: 600;
+    }
+    .math-container {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      color: #333;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .math-container p,
+    .math-container ul {
+      margin: 0.8rem 0;
+    }
+    .math-container li {
+      margin-left: 1.2rem;
+      list-style-type: disc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Multilayer Resistance Calculator</h1>
+
+    <!-- Insert the image below the title -->
+    <img
+      class="top-image"
+      src="https://emlizard.github.io/main-page/images/diagram_resistance2.png"
+      alt="Resistance Diagram"
+    />
+
+    <!-- 1) Number of Layers -->
+    <label for="numLayers">Number of Layers</label>
+    <input type="number" id="numLayers" min="1" placeholder="e.g., 3" />
+    <button id="btnGenerate">Generate Layers</button>
+    <div id="errorGenerate" class="error"></div>
+
+    <!-- Container for dynamically generated layer inputs -->
+    <div id="layersContainer"></div>
+
+    <!-- 2) Connection Type (Series / Parallel) -->
+    <div id="connectionSection" class="connection-type" style="display: none;">
+      <label>Connection Type:</label>
+      <div class="inline-group">
+        <input type="radio" id="connSeries" name="connection" value="series" checked />
+        <label for="connSeries" style="font-weight: normal; margin-right: 1rem;">Series</label>
+        <input type="radio" id="connParallel" name="connection" value="parallel" />
+        <label for="connParallel" style="font-weight: normal;">Parallel</label>
+      </div>
+    </div>
+
+    <!-- 3) Output Unit Selection -->
+    <div id="outputUnitSection" class="output-unit-section" style="display: none;">
+      <label for="outputUnit">Output Unit:</label>
+      <select id="outputUnit" class="unit-select">
+        <option value="1e-6">µΩ</option>
+        <option value="1e-3" selected>mΩ</option>
+        <option value="1">Ω</option>
+        <option value="1e3">kΩ</option>
+        <option value="1e6">MΩ</option>
+      </select>
+    </div>
+
+    <!-- 4) Calculate Button -->
+    <button id="btnCalculate" style="display: none;">Calculate Resistance</button>
+
+    <!-- 5) Result Display -->
+    <div id="resultContainer" class="result" style="display: none;"></div>
+
+    <!-- 6) Formulas and Conductivity Values -->
+    <div class="math-container">
+      <p><strong>Formulas Used:</strong></p>
+      <ul>
+        <li>
+          Resistance of layer \(i\):
+          \[
+            R_i = \frac{L}{\sigma \times A}
+          \]
+          where:
+          <ul>
+            <li>\(L\) is the length of the conductor (m)</li>
+            <li>\(\sigma\) is the electrical conductivity (S/m)</li>
+            <li>\(A\) is the cross-sectional area (m²)</li>
+          </ul>
+        </li>
+        <li>
+          Total resistance for <em>series</em> connection:
+          \[
+            R_{\text{total}} = \sum_{i=1}^n R_i
+          \]
+        </li>
+        <li>
+          Total resistance for <em>parallel</em> connection:
+          \[
+            \frac{1}{R_{\text{total}}} = \sum_{i=1}^n \frac{1}{R_i}
+          \quad\Longrightarrow\quad
+            R_{\text{total}} = \left( \sum_{i=1}^n \frac{1}{R_i} \right)^{-1}
+          \]
+        </li>
+      </ul>
+
+      <p><strong>Material Electrical Conductivity (in S/m):</strong></p>
+      <ul>
+        <li>Copper (\(\sigma_\text{Cu}\)): \(5.80 \times 10^7\) S/m</li>
+        <li>Gold (\(\sigma_\text{Au}\)): \(4.10 \times 10^7\) S/m</li>
+        <li>Silver (\(\sigma_\text{Ag}\)): \(6.10 \times 10^7\) S/m</li>
+        <li>Aluminum (\(\sigma_\text{Al}\)): \(3.80 \times 10^7\) S/m</li>
+        <li>Nickel (\(\sigma_\text{Ni}\)): \(1.45 \times 10^7\) S/m</li>
+        <li>Tin (\(\sigma_\text{Sn}\)): \(0.867 \times 10^7\) S/m</li>
+        <li>Zinc (\(\sigma_\text{Zn}\)): \(1.67 \times 10^7\) S/m</li>
+        <li>Stainless Steel (\(\sigma_\text{Sus}\)): \(0.11 \times 10^7\) S/m</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Predefined conductivities in units of 10^5 S/m
+    const materialConductivity = {
+      'Copper': 580,       // 5.80 × 10^7 S/m
+      'Gold': 410,         // 4.10 × 10^7 S/m
+      'Silver': 610,       // 6.10 × 10^7 S/m
+      'Aluminum': 380,     // 3.80 × 10^7 S/m
+      'Nickel': 145,       // 1.45 × 10^7 S/m
+      'Tin': 86.7,         // 0.867 × 10^7 S/m
+      'Zinc': 167,         // 1.67 × 10^7 S/m
+      'Stainless Steel': 11 // 0.11 × 10^7 S/m
+    };
+
+    const lengthUnits = {
+      'm': 1,
+      'cm': 1e-2,
+      'mm': 1e-3,
+      'µm': 1e-6
+    };
+
+    const areaUnits = {
+      'm²': 1,
+      'cm²': 1e-4,
+      'mm²': 1e-6,
+      'µm²': 1e-12
+    };
+
+    // Utility: format number in normal decimal (no exponential), up to 6 decimal places:
+    function formatNumber(value) {
+      return value.toLocaleString('en', {
+        useGrouping: false,
+        maximumFractionDigits: 6
+      });
+    }
+
+    const layersContainer = document.getElementById('layersContainer');
+    const connectionSection = document.getElementById('connectionSection');
+    const outputUnitSection = document.getElementById('outputUnitSection');
+    const btnCalculate = document.getElementById('btnCalculate');
+    const resultContainer = document.getElementById('resultContainer');
+    const errorGenerate = document.getElementById('errorGenerate');
+
+    document.getElementById('btnGenerate').addEventListener('click', () => {
+      errorGenerate.textContent = '';
+      layersContainer.innerHTML = '';
+      resultContainer.style.display = 'none';
+      const n = parseInt(document.getElementById('numLayers').value);
+
+      if (isNaN(n) || n < 1) {
+        errorGenerate.textContent = 'Please enter a valid number of layers (≥ 1).';
+        connectionSection.style.display = 'none';
+        outputUnitSection.style.display = 'none';
+        btnCalculate.style.display = 'none';
+        return;
+      }
+
+      // Dynamically create input fields for each layer
+      for (let i = 1; i <= n; i++) {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'layer';
+
+        const title = document.createElement('h3');
+        title.textContent = `Layer ${i}`;
+        layerDiv.appendChild(title);
+
+        // Material select
+        const labelMat = document.createElement('label');
+        labelMat.setAttribute('for', `material_${i}`);
+        labelMat.textContent = 'Choose Material or Custom Conductivity';
+        layerDiv.appendChild(labelMat);
+
+        const selectMat = document.createElement('select');
+        selectMat.id = `material_${i}`;
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select...';
+        selectMat.appendChild(defaultOption);
+
+        for (let mat in materialConductivity) {
+          const opt = document.createElement('option');
+          opt.value = mat;
+          opt.textContent = mat;
+          selectMat.appendChild(opt);
+        }
+        const customOpt = document.createElement('option');
+        customOpt.value = 'Custom';
+        customOpt.textContent = 'Custom';
+        selectMat.appendChild(customOpt);
+        layerDiv.appendChild(selectMat);
+
+        // Custom conductivity input
+        const labelCond = document.createElement('label');
+        labelCond.setAttribute('for', `cond_${i}`);
+        labelCond.textContent = 'Conductivity (×10⁵ S/m)';
+        labelCond.style.display = 'none';
+        layerDiv.appendChild(labelCond);
+
+        const inputCond = document.createElement('input');
+        inputCond.type = 'number';
+        inputCond.id = `cond_${i}`;
+        inputCond.placeholder = 'e.g., 5.96 (for 5.96×10⁵ S/m)';
+        inputCond.step = 'any';
+        inputCond.style.display = 'none';
+        layerDiv.appendChild(inputCond);
+
+        // Area input + unit
+        const labelArea = document.createElement('label');
+        labelArea.textContent = 'Cross-sectional Area (A)';
+        layerDiv.appendChild(labelArea);
+
+        const areaGroup = document.createElement('div');
+        areaGroup.className = 'inline-group';
+
+        const inputArea = document.createElement('input');
+        inputArea.type = 'number';
+        inputArea.id = `area_${i}`;
+        inputArea.placeholder = 'e.g., 1';
+        inputArea.step = 'any';
+        areaGroup.appendChild(inputArea);
+
+        const selectAreaUnit = document.createElement('select');
+        selectAreaUnit.id = `areaUnit_${i}`;
+        selectAreaUnit.className = 'unit-select';
+        for (let unit in areaUnits) {
+          const opt = document.createElement('option');
+          opt.value = unit;
+          opt.textContent = unit;
+          if (unit === 'mm²') opt.selected = true; // default mm²
+          selectAreaUnit.appendChild(opt);
+        }
+        areaGroup.appendChild(selectAreaUnit);
+        layerDiv.appendChild(areaGroup);
+
+        // Length input + unit
+        const labelLength = document.createElement('label');
+        labelLength.textContent = 'Length (L)';
+        layerDiv.appendChild(labelLength);
+
+        const lengthGroup = document.createElement('div');
+        lengthGroup.className = 'inline-group';
+
+        const inputLength = document.createElement('input');
+        inputLength.type = 'number';
+        inputLength.id = `length_${i}`;
+        inputLength.placeholder = 'e.g., 1';
+        inputLength.step = 'any';
+        lengthGroup.appendChild(inputLength);
+
+        const selectLengthUnit = document.createElement('select');
+        selectLengthUnit.id = `lengthUnit_${i}`;
+        selectLengthUnit.className = 'unit-select';
+        for (let unit in lengthUnits) {
+          const opt = document.createElement('option');
+          opt.value = unit;
+          opt.textContent = unit;
+          if (unit === 'mm') opt.selected = true; // default mm
+          selectLengthUnit.appendChild(opt);
+        }
+        lengthGroup.appendChild(selectLengthUnit);
+        layerDiv.appendChild(lengthGroup);
+
+        layersContainer.appendChild(layerDiv);
+
+        // Show/hide custom conductivity input
+        selectMat.addEventListener('change', () => {
+          if (selectMat.value === 'Custom') {
+            labelCond.style.display = 'block';
+            inputCond.style.display = 'block';
+          } else {
+            labelCond.style.display = 'none';
+            inputCond.style.display = 'none';
+          }
+        });
+      }
+
+      connectionSection.style.display = 'block';
+      outputUnitSection.style.display = 'block';
+      btnCalculate.style.display = 'inline-block';
+    });
+
+    document.getElementById('btnCalculate').addEventListener('click', () => {
+      resultContainer.style.display = 'none';
+      resultContainer.innerHTML = '';
+
+      const n = parseInt(document.getElementById('numLayers').value);
+      const connectionType = document.querySelector('input[name="connection"]:checked').value;
+      const outputUnitFactor = parseFloat(document.getElementById('outputUnit').value);
+
+      let resistances = [];
+      let errorInCalculation = false;
+      let errorMessage = '';
+
+      for (let i = 1; i <= n; i++) {
+        // Conductivity selection
+        const matSelect = document.getElementById(`material_${i}`);
+        let condInputValue;
+        if (matSelect.value === 'Custom') {
+          const customVal = parseFloat(document.getElementById(`cond_${i}`).value);
+          if (isNaN(customVal) || customVal <= 0) {
+            errorInCalculation = true;
+            errorMessage = `Layer ${i}: Please enter a valid custom conductivity (> 0).`;
+            break;
+          }
+          condInputValue = customVal;
+        } else if (materialConductivity.hasOwnProperty(matSelect.value)) {
+          condInputValue = materialConductivity[matSelect.value];
+        } else {
+          errorInCalculation = true;
+          errorMessage = `Layer ${i}: Please select a material or enter custom conductivity.`;
+          break;
+        }
+
+        // Area
+        const areaValRaw = parseFloat(document.getElementById(`area_${i}`).value);
+        const areaUnit = document.getElementById(`areaUnit_${i}`).value;
+        if (isNaN(areaValRaw) || areaValRaw <= 0) {
+          errorInCalculation = true;
+          errorMessage = `Layer ${i}: Please enter a valid area (> 0).`;
+          break;
+        }
+        // Convert area to m²
+        const areaVal = areaValRaw * areaUnits[areaUnit];
+
+        // Length
+        const lengthValRaw = parseFloat(document.getElementById(`length_${i}`).value);
+        const lengthUnit = document.getElementById(`lengthUnit_${i}`).value;
+        if (isNaN(lengthValRaw) || lengthValRaw <= 0) {
+          errorInCalculation = true;
+          errorMessage = `Layer ${i}: Please enter a valid length (> 0).`;
+          break;
+        }
+        // Convert length to m
+        const lengthVal = lengthValRaw * lengthUnits[lengthUnit];
+
+        // Actual conductivity σ = (input × 10^5) S/m
+        const sigma = condInputValue * 1e5;
+        // Resistance R_i = L / (σ × A)
+        const R_i = lengthVal / (sigma * areaVal);
+        resistances.push(R_i);
+      }
+
+      if (errorInCalculation) {
+        resultContainer.style.display = 'block';
+        resultContainer.style.borderColor = '#e74c3c';
+        resultContainer.style.backgroundColor = '#fdecea';
+        resultContainer.style.color = '#a94442';
+        resultContainer.innerHTML = `Error: ${errorMessage}`;
+        return;
+      }
+
+      // Compute total resistance
+      let R_total;
+      if (connectionType === 'series') {
+        R_total = resistances.reduce((sum, r) => sum + r, 0);
+      } else {
+        // parallel
+        const reciprocalSum = resistances.reduce((sum, r) => sum + (1 / r), 0);
+        R_total = 1 / reciprocalSum;
+      }
+
+      // Prepare output
+      let html = `Individual Layer Resistances (in selected unit):\n`;
+      resistances.forEach((r, idx) => {
+        const r_display = r / outputUnitFactor;
+        html += `  • Layer ${idx + 1}: ${formatNumber(r_display)} ${getUnitAbbreviation(outputUnitFactor)}\n`;
+      });
+      const Rtotal_display = R_total / outputUnitFactor;
+      const connLabel = connectionType.charAt(0).toUpperCase() + connectionType.slice(1);
+      html += `\nEquivalent Resistance (${connLabel}): ${formatNumber(Rtotal_display)} ${getUnitAbbreviation(outputUnitFactor)}`;
+
+      resultContainer.style.display = 'block';
+      resultContainer.style.borderColor = '#a2d9ce';
+      resultContainer.style.backgroundColor = '#e8f8f5';
+      resultContainer.style.color = '#155d4e';
+      resultContainer.innerText = html;
+    });
+
+    // Helper: return unit abbreviation string from factor
+    function getUnitAbbreviation(factor) {
+      switch (factor) {
+        case 1e-6: return 'µΩ';
+        case 1e-3: return 'mΩ';
+        case 1:    return 'Ω';
+        case 1e3:  return 'kΩ';
+        case 1e6:  return 'MΩ';
+        default:   return 'Ω';
+      }
+    }
+  </script>
+</body>
+</html>
