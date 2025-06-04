@@ -8,7 +8,6 @@
   <!-- MathJax (for rendering formulas) -->
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-  <!-- Simple CSS styles -->
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,7 +16,7 @@
       padding: 0;
     }
     .container {
-      max-width: 700px;
+      max-width: 900px;
       margin: 2rem auto;
       padding: 1.5rem;
       background-color: #ffffff;
@@ -49,6 +48,17 @@
       align-items: center;
       margin-top: 0.25rem;
     }
+
+    /* 숫자 입력창과 단위 선택창 비율 조정 */
+    .inline-group input[type="number"] {
+      flex: 0 0 60%;
+      max-width: 60%;
+    }
+    .inline-group select.unit-select {
+      flex: 0 0 40%;
+      max-width: 40%;
+    }
+
     input[type="number"],
     select {
       padding: 0.5rem;
@@ -56,12 +66,6 @@
       border-radius: 4px;
       font-size: 1rem;
       box-sizing: border-box;
-    }
-    input[type="number"] {
-      flex: 1;
-    }
-    select.unit-select {
-      width: 120px;
     }
     button {
       display: inline-block;
@@ -79,18 +83,27 @@
     button:hover {
       background-color: #17a589;
     }
-    .layer {
+
+    /* 반응형 그리드 */
+    #layersContainer {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
       margin-top: 1.5rem;
+    }
+    .layer {
       padding: 1rem;
       border: 1px solid #ddd;
       border-radius: 6px;
       background-color: #fdfdfd;
+      box-sizing: border-box;
     }
     .layer h3 {
       margin: 0 0 0.5rem 0;
       font-size: 1.1rem;
       color: #333;
     }
+
     .connection-type,
     .output-unit-section {
       margin-top: 1.5rem;
@@ -133,25 +146,23 @@
   <div class="container">
     <h1>Multilayer Resistance Calculator</h1>
 
-    <!-- Insert the image below the title -->
+    <!-- 이미지 삽입 -->
     <img
       class="top-image"
       src="https://emlizard.github.io/main-page/images/diagram_resistance3.png"
       alt="Resistance Diagram"
-      width="300"    
-      height="auto"  
     />
 
-    <!-- 1) Number of Layers -->
+    <!-- 1) 레이어 개수 입력 -->
     <label for="numLayers">Number of Layers</label>
     <input type="number" id="numLayers" min="1" placeholder="e.g., 3" />
     <button id="btnGenerate">Generate Layers</button>
     <div id="errorGenerate" class="error"></div>
 
-    <!-- Container for dynamically generated layer inputs -->
+    <!-- 2) 레이어 입력창들 (반응형 그리드) -->
     <div id="layersContainer"></div>
 
-    <!-- 2) Connection Type (Series / Parallel) -->
+    <!-- 3) 연결 방식 선택 -->
     <div id="connectionSection" class="connection-type" style="display: none;">
       <label>Connection Type:</label>
       <div class="inline-group">
@@ -162,7 +173,7 @@
       </div>
     </div>
 
-    <!-- 3) Output Unit Selection -->
+    <!-- 4) 출력 단위 선택 -->
     <div id="outputUnitSection" class="output-unit-section" style="display: none;">
       <label for="outputUnit">Output Unit:</label>
       <select id="outputUnit" class="unit-select">
@@ -174,13 +185,13 @@
       </select>
     </div>
 
-    <!-- 4) Calculate Button -->
+    <!-- 5) 계산 버튼 -->
     <button id="btnCalculate" style="display: none;">Calculate Resistance</button>
 
-    <!-- 5) Result Display -->
+    <!-- 6) 결과 출력 -->
     <div id="resultContainer" class="result" style="display: none;"></div>
 
-    <!-- 6) Formulas and Conductivity Values -->
+    <!-- 7) 수식 및 전도도 정리 -->
     <div class="math-container">
       <p><strong>Formulas Used:</strong></p>
       <ul>
@@ -191,19 +202,19 @@
           \]
           where:
           <ul>
-            <li>\(L\) is the length of the conductor (m)</li>
-            <li>\(\sigma\) is the electrical conductivity (S/m)</li>
+            <li>\(L\) is the length (m)</li>
+            <li>\(\sigma\) is the conductivity (S/m)</li>
             <li>\(A\) is the cross-sectional area (m²)</li>
           </ul>
         </li>
         <li>
-          Total resistance for <em>series</em> connection:
+          Series:
           \[
             R_{\text{total}} = \sum_{i=1}^n R_i
           \]
         </li>
         <li>
-          Total resistance for <em>parallel</em> connection:
+          Parallel:
           \[
             \frac{1}{R_{\text{total}}} = \sum_{i=1}^n \frac{1}{R_i}
           \quad\Longrightarrow\quad
@@ -221,22 +232,22 @@
         <li>Nickel (\(\sigma_\text{Ni}\)): \(1.45 \times 10^7\) S/m</li>
         <li>Tin (\(\sigma_\text{Sn}\)): \(0.867 \times 10^7\) S/m</li>
         <li>Zinc (\(\sigma_\text{Zn}\)): \(1.67 \times 10^7\) S/m</li>
-        <li>Stainless Steel (\(\sigma_\text{Sus}\)): \(0.11 \times 10^7\) S/m</li>
+        <li>Stainless Steel (\(\sigma_\text{SS}\)): \(0.11 \times 10^7\) S/m</li>
       </ul>
     </div>
   </div>
 
   <script>
-    // Predefined conductivities in units of 10^5 S/m
+    // 전도도 값 (단위: ×10^5 S/m)
     const materialConductivity = {
-      'Copper': 580,       // 5.80 × 10^7 S/m
-      'Gold': 410,         // 4.10 × 10^7 S/m
-      'Silver': 610,       // 6.10 × 10^7 S/m
-      'Aluminum': 380,     // 3.80 × 10^7 S/m
-      'Nickel': 145,       // 1.45 × 10^7 S/m
-      'Tin': 86.7,         // 0.867 × 10^7 S/m
-      'Zinc': 167,         // 1.67 × 10^7 S/m
-      'Stainless Steel': 11 // 0.11 × 10^7 S/m
+      'Copper': 580,
+      'Gold': 410,
+      'Silver': 610,
+      'Aluminum': 380,
+      'Nickel': 145,
+      'Tin': 86.7,
+      'Zinc': 167,
+      'Stainless Steel': 11
     };
 
     const lengthUnits = {
@@ -253,7 +264,6 @@
       'µm²': 1e-12
     };
 
-    // Utility: format number in normal decimal (no exponential), up to 6 decimal places:
     function formatNumber(value) {
       return value.toLocaleString('en', {
         useGrouping: false,
@@ -272,8 +282,8 @@
       errorGenerate.textContent = '';
       layersContainer.innerHTML = '';
       resultContainer.style.display = 'none';
-      const n = parseInt(document.getElementById('numLayers').value);
 
+      const n = parseInt(document.getElementById('numLayers').value);
       if (isNaN(n) || n < 1) {
         errorGenerate.textContent = 'Please enter a valid number of layers (≥ 1).';
         connectionSection.style.display = 'none';
@@ -282,7 +292,6 @@
         return;
       }
 
-      // Dynamically create input fields for each layer
       for (let i = 1; i <= n; i++) {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer';
@@ -291,7 +300,7 @@
         title.textContent = `Layer ${i}`;
         layerDiv.appendChild(title);
 
-        // Material select
+        // 재료 선택
         const labelMat = document.createElement('label');
         labelMat.setAttribute('for', `material_${i}`);
         labelMat.textContent = 'Choose Material or Custom Conductivity';
@@ -316,7 +325,7 @@
         selectMat.appendChild(customOpt);
         layerDiv.appendChild(selectMat);
 
-        // Custom conductivity input
+        // 커스텀 전도도 입력
         const labelCond = document.createElement('label');
         labelCond.setAttribute('for', `cond_${i}`);
         labelCond.textContent = 'Conductivity (×10⁵ S/m)';
@@ -326,12 +335,12 @@
         const inputCond = document.createElement('input');
         inputCond.type = 'number';
         inputCond.id = `cond_${i}`;
-        inputCond.placeholder = 'e.g., 5.96 (for 5.96×10⁵ S/m)';
+        inputCond.placeholder = 'e.g., 5.96';
         inputCond.step = 'any';
         inputCond.style.display = 'none';
         layerDiv.appendChild(inputCond);
 
-        // Area input + unit
+        // 면적 입력 + 단위
         const labelArea = document.createElement('label');
         labelArea.textContent = 'Cross-sectional Area (A)';
         layerDiv.appendChild(labelArea);
@@ -353,13 +362,13 @@
           const opt = document.createElement('option');
           opt.value = unit;
           opt.textContent = unit;
-          if (unit === 'mm²') opt.selected = true; // default mm²
+          if (unit === 'mm²') opt.selected = true;
           selectAreaUnit.appendChild(opt);
         }
         areaGroup.appendChild(selectAreaUnit);
         layerDiv.appendChild(areaGroup);
 
-        // Length input + unit
+        // 길이 입력 + 단위
         const labelLength = document.createElement('label');
         labelLength.textContent = 'Length (L)';
         layerDiv.appendChild(labelLength);
@@ -381,7 +390,7 @@
           const opt = document.createElement('option');
           opt.value = unit;
           opt.textContent = unit;
-          if (unit === 'mm') opt.selected = true; // default mm
+          if (unit === 'mm') opt.selected = true;
           selectLengthUnit.appendChild(opt);
         }
         lengthGroup.appendChild(selectLengthUnit);
@@ -389,7 +398,6 @@
 
         layersContainer.appendChild(layerDiv);
 
-        // Show/hide custom conductivity input
         selectMat.addEventListener('change', () => {
           if (selectMat.value === 'Custom') {
             labelCond.style.display = 'block';
@@ -419,7 +427,7 @@
       let errorMessage = '';
 
       for (let i = 1; i <= n; i++) {
-        // Conductivity selection
+        // 전도도 선택
         const matSelect = document.getElementById(`material_${i}`);
         let condInputValue;
         if (matSelect.value === 'Custom') {
@@ -438,7 +446,7 @@
           break;
         }
 
-        // Area
+        // 면적
         const areaValRaw = parseFloat(document.getElementById(`area_${i}`).value);
         const areaUnit = document.getElementById(`areaUnit_${i}`).value;
         if (isNaN(areaValRaw) || areaValRaw <= 0) {
@@ -446,10 +454,9 @@
           errorMessage = `Layer ${i}: Please enter a valid area (> 0).`;
           break;
         }
-        // Convert area to m²
         const areaVal = areaValRaw * areaUnits[areaUnit];
 
-        // Length
+        // 길이
         const lengthValRaw = parseFloat(document.getElementById(`length_${i}`).value);
         const lengthUnit = document.getElementById(`lengthUnit_${i}`).value;
         if (isNaN(lengthValRaw) || lengthValRaw <= 0) {
@@ -457,12 +464,11 @@
           errorMessage = `Layer ${i}: Please enter a valid length (> 0).`;
           break;
         }
-        // Convert length to m
         const lengthVal = lengthValRaw * lengthUnits[lengthUnit];
 
-        // Actual conductivity σ = (input × 10^5) S/m
+        // 실제 전도도 σ = (입력 × 10^5) S/m
         const sigma = condInputValue * 1e5;
-        // Resistance R_i = L / (σ × A)
+        // 레이어 저항 R_i = L / (σ × A)
         const R_i = lengthVal / (sigma * areaVal);
         resistances.push(R_i);
       }
@@ -476,17 +482,16 @@
         return;
       }
 
-      // Compute total resistance
+      // 전체 저항 계산
       let R_total;
       if (connectionType === 'series') {
         R_total = resistances.reduce((sum, r) => sum + r, 0);
       } else {
-        // parallel
         const reciprocalSum = resistances.reduce((sum, r) => sum + (1 / r), 0);
         R_total = 1 / reciprocalSum;
       }
 
-      // Prepare output
+      // 출력 준비
       let html = `Individual Layer Resistances (in selected unit):\n`;
       resistances.forEach((r, idx) => {
         const r_display = r / outputUnitFactor;
@@ -503,7 +508,7 @@
       resultContainer.innerText = html;
     });
 
-    // Helper: return unit abbreviation string from factor
+    // 출력 단위 문자열 반환
     function getUnitAbbreviation(factor) {
       switch (factor) {
         case 1e-6: return 'µΩ';
