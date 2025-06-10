@@ -314,7 +314,7 @@
         defaultOption.value = '';
         defaultOption.textContent = 'Select...';
         selectMat.appendChild(defaultOption);
-        selectMat.value = 'Copper';
+        
 
         for (let mat in materialConductivity) {
           const opt = document.createElement('option');
@@ -327,7 +327,7 @@
         customOpt.textContent = 'Custom';
         selectMat.appendChild(customOpt);
         layerDiv.appendChild(selectMat);
-
+        selectMat.value = 'Copper';
         // 커스텀 전도도 입력
         const labelCond = document.createElement('label');
         labelCond.setAttribute('for', `cond_${i}`);
