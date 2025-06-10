@@ -314,6 +314,7 @@
         defaultOption.value = '';
         defaultOption.textContent = 'Select...';
         selectMat.appendChild(defaultOption);
+        selectMat.value = 'Copper';
 
         for (let mat in materialConductivity) {
           const opt = document.createElement('option');
@@ -356,6 +357,7 @@
         inputArea.placeholder = 'e.g., 1';
         inputArea.step = 'any';
         areaGroup.appendChild(inputArea);
+        inputArea.value = 1;
 
         const selectAreaUnit = document.createElement('select');
         selectAreaUnit.id = `areaUnit_${i}`;
@@ -384,6 +386,7 @@
         inputLength.placeholder = 'e.g., 1';
         inputLength.step = 'any';
         lengthGroup.appendChild(inputLength);
+        inputLength.value = 1;
 
         const selectLengthUnit = document.createElement('select');
         selectLengthUnit.id = `lengthUnit_${i}`;
